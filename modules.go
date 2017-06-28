@@ -8,5 +8,5 @@ import (
 	_ "github.com/gliderlabs/logspout/transports/tcp"
 	_ "github.com/gliderlabs/logspout/transports/udp"
 	_ "github.com/gliderlabs/logspout/transports/tls"
-	_ "github.com/iamatypeofwalrus/logspout-loggly/loggly"
+	_ "github.com/aranaea/logspout-loggly/loggly"
 )
