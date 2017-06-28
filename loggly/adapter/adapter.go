@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"strings"
 
 	"github.com/gliderlabs/logspout/router"
 )
@@ -88,21 +89,28 @@ func (l *Adapter) newBuffer() []logglyMessage {
 }
 
 func (l *Adapter) flushBuffer(buffer []logglyMessage) {
-	var data bytes.Buffer
+	var dataBuffers = make(map[string] bytes.Buffer, 5)
 
 	for _, msg := range buffer {
+		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
+		if _, ok := dataBuffers[logglyURL]; !ok {
+			dataBuffers[logglyURL] = bytes.Buffer{}
+		}
+		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
 		data.Write(j)
 		data.WriteString("\n")
 	}
 
-	req, _ := http.NewRequest(
-		"POST",
-		l.logglyURL,
-		&data,
-	)
-
-	go l.sendRequestToLoggly(req)
+	//for containerName, data := range dataBuffers {
+	for url, data := range dataBuffers {
+		req, _ := http.NewRequest(
+			"POST",
+			url,
+			&data,
+		)
+		go l.sendRequestToLoggly(req)
+	}
 }
 
 func (l *Adapter) sendRequestToLoggly(req *http.Request) {
@@ -142,12 +150,26 @@ func buildLogglyURL(token, tags string) string {
 		token,
 	)
 
-	if tags != "" {
+	return addTagsToLogglyURL(url, tags)
+}
+
+func addTagsToLogglyURL(url, tags string) string {
+	const sep  = "/tag/"
+
+	if tags == "" {
+		return url
+	}
+
+	if i := strings.Index(url,sep); i > 0 {
+		i += len(sep)
+		url = string(append([]byte(url)[:i], append([]byte(tags + ","), []byte(url)[i:]...)...))
+	} else {
 		url = fmt.Sprintf(
 			"%s/tag/%s/",
 			url,
 			tags,
 		)
 	}
+
 	return url
 }
