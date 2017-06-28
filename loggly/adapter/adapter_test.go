@@ -94,6 +94,70 @@ func TestBuildLogglyURL(t *testing.T) {
 	}
 }
 
+
+func TestAddTagsToLogglyURL(t *testing.T) {
+	var expectedURL string
+	var actualURL string
+	var testURL string
+
+	var baseURL = "https://logs-01.loggly.com/bulk/notreal"
+
+	expectedURL = baseURL + "/tag/testing,development/"
+	testURL = baseURL + "/tag/development/"
+
+	actualURL = addTagsToLogglyURL(testURL, "testing")
+
+	if actualURL != expectedURL {
+		t.Errorf(
+			"expected URL to be %s but was %s",
+			expectedURL,
+			actualURL,
+		)
+	}
+
+	expectedURL = baseURL + "/tag/testing,development,thenumberone/"
+	testURL = baseURL + "/tag/development,thenumberone/"
+
+	actualURL = addTagsToLogglyURL(testURL, "testing")
+
+	if actualURL != expectedURL {
+		t.Errorf(
+			"expected URL to be %s but was %s",
+			expectedURL,
+			actualURL,
+		)
+	}
+
+	expectedURL = baseURL + "/tag/testing/"
+	testURL = baseURL
+
+	actualURL = addTagsToLogglyURL(testURL, "testing")
+
+	if actualURL != expectedURL {
+		t.Errorf(
+			"expected URL to be %s but was %s",
+			expectedURL,
+			actualURL,
+		)
+	}
+
+	expectedURL = baseURL
+	testURL = baseURL
+
+	actualURL = addTagsToLogglyURL(testURL, "")
+
+	if actualURL != expectedURL {
+		t.Errorf(
+			"expected URL to be %s but was %s",
+			expectedURL,
+			actualURL,
+		)
+	}
+
+
+}
+
+
 func TestSendRequestToLoggly(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
