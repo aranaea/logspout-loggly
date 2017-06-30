@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gliderlabs/logspout/router"
-	"github.com/iamatypeofwalrus/logspout-loggly/loggly/adapter"
+	"github.com/aranaea/logspout-loggly/loggly/adapter"
 )
 
 const (
