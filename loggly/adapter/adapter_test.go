@@ -128,6 +128,19 @@ func TestAddTagsToLogglyURL(t *testing.T) {
 		)
 	}
 
+	expectedURL = baseURL + "/tag/testing,development,thenumberone/"
+	testURL = baseURL + "/tag/development,thenumberone/"
+
+	actualURL = addTagsToLogglyURL(testURL, "/testing")
+
+	if actualURL != expectedURL {
+		t.Errorf(
+			"expected URL to be %s but was %s",
+			expectedURL,
+			actualURL,
+		)
+	}
+
 	expectedURL = baseURL + "/tag/testing/"
 	testURL = baseURL
 

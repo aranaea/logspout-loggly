@@ -95,16 +95,16 @@ func (l *Adapter) newBuffer() []logglyMessage {
 func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 	var dataBuffers = make(map[string] bytes.Buffer, 5)
 
-	debugFP.WriteString("Flushing the buffer")
+	debugFP.WriteString("Flushing the buffer\n")
 
 	for _, msg := range buffer {
 		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
-		debugFP.WriteString("** Container name: " + msg.ContainerName)
+		debugFP.WriteString("** Container name: " + msg.ContainerName + "\n")
 		if _, ok := dataBuffers[logglyURL]; !ok {
-			debugFP.WriteString(logglyURL + " did not exist.  Allocating...")
+			debugFP.WriteString(logglyURL + " did not exist.  Allocating...\n")
 			dataBuffers[logglyURL] = bytes.Buffer{}
 		} else {
-			debugFP.WriteString(logglyURL + " was already setup")
+			debugFP.WriteString(logglyURL + " was already setup\n")
 		}
 		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
@@ -166,6 +166,8 @@ func buildLogglyURL(token, tags string) string {
 func addTagsToLogglyURL(url, tags string) string {
 	const sep  = "/tag/"
 
+	tags = strings.Trim(tags, "/ ")
+	
 	if tags == "" {
 		return url
 	}
