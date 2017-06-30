@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 	"strings"
-	"os"
 
 	"github.com/gliderlabs/logspout/router"
 )
