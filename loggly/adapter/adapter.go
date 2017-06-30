@@ -91,23 +91,12 @@ func (l *Adapter) newBuffer() []logglyMessage {
 func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 	var dataBuffers = make(map[string] bytes.Buffer, 5)
 
+	fmt.Println("Flushing the buffer")
+
 	for _, msg := range buffer {
 		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
 		if _, ok := dataBuffers[logglyURL]; !ok {
-			l.log.Println(
-				fmt.Errorf(
-					"Added the url %s to the map",
-					logglyURL,
-				),
-			);
 			dataBuffers[logglyURL] = bytes.Buffer{}
-		} else {
-			l.log.Println(
-				fmt.Errorf(
-					"The url %s was already in the map",
-					logglyURL,
-				),
-			);
 		}
 		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
@@ -183,6 +172,8 @@ func addTagsToLogglyURL(url, tags string) string {
 			tags,
 		)
 	}
+
+	fmt.Printf("Added %s to %s", tags, url);
 
 	return url
 }
