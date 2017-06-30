@@ -94,7 +94,20 @@ func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 	for _, msg := range buffer {
 		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
 		if _, ok := dataBuffers[logglyURL]; !ok {
+			l.log.Println(
+				fmt.Errorf(
+					"Added the url %s to the map",
+					logglyURL,
+				),
+			);
 			dataBuffers[logglyURL] = bytes.Buffer{}
+		} else {
+			l.log.Println(
+				fmt.Errorf(
+					"The url %s was already in the map",
+					logglyURL,
+				),
+			);
 		}
 		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
