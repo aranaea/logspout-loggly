@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 	"strings"
+	"os"
 
 	"github.com/gliderlabs/logspout/router"
 )
@@ -28,6 +29,8 @@ type Adapter struct {
 	queue      chan logglyMessage
 }
 
+var debugFP, err = os.Create("/tmp/debug.log")
+
 // New returns an Adapter that receives messages from logspout. Additionally,
 // it launches a goroutine to buffer and flush messages to loggly.
 func New(logglyToken string, tags string, bufferSize int) *Adapter {
@@ -37,6 +40,8 @@ func New(logglyToken string, tags string, bufferSize int) *Adapter {
 		logglyURL:  buildLogglyURL(logglyToken, tags),
 		queue:      make(chan logglyMessage),
 	}
+
+	debugFP.WriteString("created a new adapter\n")
 
 	go adapter.readQueue()
 
@@ -91,12 +96,16 @@ func (l *Adapter) newBuffer() []logglyMessage {
 func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 	var dataBuffers = make(map[string] bytes.Buffer, 5)
 
-	fmt.Println("Flushing the buffer")
+	debugFP.WriteString("Flushing the buffer")
 
 	for _, msg := range buffer {
 		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
+		debugFP.WriteString("** Container name: " + msg.ContainerName)
 		if _, ok := dataBuffers[logglyURL]; !ok {
+			debugFP.WriteString(logglyURL + " did not exist.  Allocating...")
 			dataBuffers[logglyURL] = bytes.Buffer{}
+		} else {
+			debugFP.WriteString(logglyURL + " was already setup")
 		}
 		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
