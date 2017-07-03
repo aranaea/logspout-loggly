@@ -125,6 +125,7 @@ func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 
 func (l *Adapter) sendRequestToLoggly(req *http.Request) {
 	resp, err := http.DefaultClient.Do(req)
+	fmt.Printf("Sending logs to loggly\n");
 
 	if resp != nil {
 		defer resp.Body.Close()
@@ -148,6 +149,8 @@ func (l *Adapter) sendRequestToLoggly(req *http.Request) {
 				resp.Body,
 			),
 		)
+	} else {
+		fmt.Printf("**Request sent to loggly\n");
 	}
 }
 
@@ -167,7 +170,7 @@ func addTagsToLogglyURL(url, tags string) string {
 	const sep  = "/tag/"
 
 	tags = strings.Trim(tags, "/ ")
-	
+
 	if tags == "" {
 		return url
 	}
@@ -183,7 +186,7 @@ func addTagsToLogglyURL(url, tags string) string {
 		)
 	}
 
-	fmt.Printf("Added %s to %s", tags, url);
+	fmt.Printf("Added %s to %s\n", tags, url);
 
 	return url
 }
