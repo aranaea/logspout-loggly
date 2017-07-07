@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"strings"
 
 	"github.com/gliderlabs/logspout/router"
 )
@@ -28,8 +27,6 @@ type Adapter struct {
 	queue      chan logglyMessage
 }
 
-var debugFP, err = os.Create("/tmp/debug.log")
-
 // New returns an Adapter that receives messages from logspout. Additionally,
 // it launches a goroutine to buffer and flush messages to loggly.
 func New(logglyToken string, tags string, bufferSize int) *Adapter {
@@ -40,8 +37,6 @@ func New(logglyToken string, tags string, bufferSize int) *Adapter {
 		queue:      make(chan logglyMessage),
 	}
 
-	debugFP.WriteString("created a new adapter\n")
-
 	go adapter.readQueue()
 
 	return adapter
@@ -51,7 +46,6 @@ func New(logglyToken string, tags string, bufferSize int) *Adapter {
 // Loggly
 func (l *Adapter) Stream(logstream chan *router.Message) {
 	for m := range logstream {
-		debugFP.WriteString("Pushed '" + m.Data + "' onto the queue\n")
 		l.queue <- logglyMessage{
 			Message:           m.Data,
 			ContainerName:     m.Container.Name,
@@ -94,39 +88,25 @@ func (l *Adapter) newBuffer() []logglyMessage {
 }
 
 func (l *Adapter) flushBuffer(buffer []logglyMessage) {
-	var dataBuffers = make(map[string] bytes.Buffer, 5)
-
-	debugFP.WriteString("Flushing the buffer\n")
+	var data bytes.Buffer
 
 	for _, msg := range buffer {
-		var logglyURL = addTagsToLogglyURL(l.logglyURL, msg.ContainerName)
-		debugFP.WriteString("** Container name: " + msg.ContainerName + "\n")
-		if _, ok := dataBuffers[logglyURL]; !ok {
-			debugFP.WriteString(logglyURL + " did not exist.  Allocating...\n")
-			dataBuffers[logglyURL] = bytes.Buffer{}
-		} else {
-			debugFP.WriteString(logglyURL + " was already setup\n")
-		}
-		data := dataBuffers[logglyURL]
 		j, _ := json.Marshal(msg)
 		data.Write(j)
 		data.WriteString("\n")
 	}
 
-	//for containerName, data := range dataBuffers {
-	for url, data := range dataBuffers {
-		req, _ := http.NewRequest(
-			"POST",
-			url,
-			&data,
-		)
-		go l.sendRequestToLoggly(req)
-	}
+	req, _ := http.NewRequest(
+		"POST",
+		l.logglyURL,
+		&data,
+	)
+
+	go l.sendRequestToLoggly(req)
 }
 
 func (l *Adapter) sendRequestToLoggly(req *http.Request) {
 	resp, err := http.DefaultClient.Do(req)
-	l.log.Printf("Sending logs to loggly\n");
 
 	if resp != nil {
 		defer resp.Body.Close()
@@ -150,8 +130,6 @@ func (l *Adapter) sendRequestToLoggly(req *http.Request) {
 				resp.Body,
 			),
 		)
-	} else {
-		l.log.Println("**Request sent to loggly");
 	}
 }
 
@@ -164,30 +142,12 @@ func buildLogglyURL(token, tags string) string {
 		token,
 	)
 
-	return addTagsToLogglyURL(url, tags)
-}
-
-func addTagsToLogglyURL(url, tags string) string {
-	const sep  = "/tag/"
-
-	tags = strings.Trim(tags, "/ ")
-
-	if tags == "" {
-		return url
-	}
-
-	if i := strings.Index(url,sep); i > 0 {
-		i += len(sep)
-		url = string(append([]byte(url)[:i], append([]byte(tags + ","), []byte(url)[i:]...)...))
-	} else {
+	if tags != "" {
 		url = fmt.Sprintf(
 			"%s/tag/%s/",
 			url,
 			tags,
 		)
 	}
-
-	debugFP.WriteString("Added " +  tags + " to " + url);
-
 	return url
 }
