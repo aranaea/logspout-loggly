@@ -10,7 +10,10 @@ import (
 	"time"
 
 	"github.com/gliderlabs/logspout/router"
+	"io/ioutil"
 )
+
+var debugLog, err = os.Open("/tmp/debug.log")
 
 const (
 	logglyAddr          = "https://logs-01.loggly.com"
@@ -106,6 +109,18 @@ func (l *Adapter) flushBuffer(buffer []logglyMessage) {
 }
 
 func (l *Adapter) sendRequestToLoggly(req *http.Request) {
+	//Temporarily just log what we were gonna send
+	debugLog.WriteString("Sending logs to loggly\n")
+	debugLog.WriteString(req.URL.RawQuery + "\n")
+	htmlData, err := ioutil.ReadAll(req.Body) //<--- here!
+
+	if err != nil {
+		debugLog.WriteString("There was an error parsing the body")
+	} else {
+		debugLog.WriteString("****\t" + string(htmlData))
+	}
+	return
+
 	resp, err := http.DefaultClient.Do(req)
 
 	if resp != nil {
